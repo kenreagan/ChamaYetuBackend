@@ -1,19 +1,102 @@
 from marshmallow import fields, Schema, validate
 import re
 
+
+class LoginSchema(Schema):
+    email = fields.String()
+    password = fields.String()
+
+class UserDisplaySchema(Schema):
+    id = fields.String()
+    first_name = fields.String(required=True)
+    middle_name = fields.String(required=True)
+    last_name = fields.String(required=True)
+    profile = fields.String()
+    residential_status = fields.String(),
+    income = fields.Integer()
+    contribution_frequency = fields.Integer(
+        validate=validate.OneOf(
+            [
+                1000,
+                3000,
+                5000,
+                10000,
+                15000,
+                20000,
+                25000,
+                30000,
+                35000,
+                40000,
+                45000,
+                50000,
+                60000,
+                70000,
+                80000,
+                90000,
+                100000
+            ]
+        )
+    )
+    phone = fields.Integer(required=True)
+    email = fields.String(validate=validate.Regexp(
+        re.compile(r'[A-Za-z0-9]*\@gmail\.com')),
+        required=True
+    )
+    id_number = fields.Integer(required=True)
+    password = fields.String(required=True)
+    date_of_birth = fields.Date(required=True)
+    gender = fields.String(
+        validate=validate.OneOf(
+            [
+                'male',
+                'female'
+            ]
+        )
+    )
+    marital_status = fields.String(
+        validate=validate.OneOf(
+            [
+                'single',
+                'married',
+                'divorced',
+                'widowed',
+                'other'
+            ]
+        )
+    )
+
+    education_level = fields.String(
+        validate=validate.OneOf(
+            [
+                'primary school',
+                'below high school',
+                'certificate',
+                'diploma',
+                'graduate',
+                'post graduate'
+            ]
+        )
+    )
+
+    points = fields.Integer()
+
+
+class UserListDisplay(Schema):
+    subscribers = fields.List(
+        fields.Nested(UserDisplaySchema),
+        required=True
+    )
+    
 class UserCreateSchema(Schema):
     first_name = fields.String(required=True)
     middle_name = fields.String(required=True)
     last_name = fields.String(required=True)
-    phone = fields.Integer(required=True, validate=validate.Regexp(
-        re.compile(r'254\d{9}')
-    ))
+    phone = fields.Integer(required=True)
     email = fields.String(validate=validate.Regexp(
-        re.compile(r'[A-Za-z0-9]{15}\@[a-z]{10}\.com')),
+        re.compile(r'[A-Za-z0-9]*\@gmail\.com')),
         required=True
     )
     id_number = fields.Integer(required=True)
-    points = fields.Integer(required=True)
     password = fields.String(required=True)
     date_of_birth = fields.Date(required=True)
     gender = fields.String(

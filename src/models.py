@@ -2,11 +2,48 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, ForeignKey, DateTime, String, Boolean
 from sqlalchemy.orm import relationship
 import datetime
+import jwt
+from typing import Dict
+from flask import current_app
 
 Base = declarative_base()
 
 
-class User(Base):
+class AuthenticationMixin:
+    def generate_token(self, userid: int):
+        payload: Dict[str, Optional] = {
+            "exp": datetime.datetime.utcnow() + datetime.timedelta(days=0, hours=2, minutes=0),
+            "iat": datetime.datetime.utcnow(),
+            "sub": userid
+        }
+        return jwt.encode(payload, key=current_app.config['SECRET_KEY'], algorithm='HS256')
+
+    @staticmethod
+    def decode_token(token):
+        try:
+            payload = jwt.decode(token, key=current_app.config['SECRET_KEY'], algorithms=['HS256'])
+            return payload['sub']
+        except jwt.ExpiredSignatureError:
+            return {
+                "code": 404,
+                "status": "ExpiredSignatureError",
+                "message": "Expired token",
+                "errors": {
+                    "": ""
+                }
+            }
+        except jwt.InvalidTokenError:
+            return {
+                "code": 403,
+                "status": "InvalidTokenError",
+                "message": "Invalid token used",
+                "errors": {
+                    "": ""
+                }
+            }
+
+
+class User(AuthenticationMixin, Base):
 	__tablename__ = 'user'
 	uuid = Column(String(300), primary_key=True, nullable=False, unique=True)
 	points = Column(Integer, default=0)
@@ -27,6 +64,7 @@ class User(Base):
 	contribution_frequency = Column(Integer)
 	chama_id = Column(Integer, ForeignKey('groups.group_id'))
 	profile_picture = Column(String(300))
+	marital_status = Column(String(300))
 	is_assigned_chama = Column(Boolean, default=False)
 	guarantors = relationship('Guarantors', lazy='dynamic', cascade="all, delete-orphan")
 
@@ -55,7 +93,6 @@ class User(Base):
 			'middle_name': self.middle_name,
 			'phone': self.phone,
 			'contribution_frequency': self.contribution_frequency,
-			'amount': self.contribution_amount,
 			'residential_status': self.residential_status,
 			'email': self.email,
 			'points': self.points,

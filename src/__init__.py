@@ -9,6 +9,23 @@ def create_app(config_class='config.Config') -> Flask:
 	app = Flask(__name__)
 
 	app.config.from_object(config_class)
+	
+	app.config['API_SPEC_OPTIONS'] = {
+        'security': [
+            {
+                "bearerAuth": [
+
+                ]
+            }
+        ],
+        'components': dict(securitySchemes={
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT"
+            }
+        })
+    }
 
 	api.init_app(app)
 
