@@ -26,7 +26,7 @@ class TestChamaApp(unittest.TestCase):
 		self.assertIsNotNone(self.app)
 	
 	def testAppenvironment(self):
-		self.assertIN('test.sqlite', os.listdir(os.getcwd()))
+		self.assertIn('test.sqlite', os.listdir(os.getcwd()))
 		self.assertEqual(current_app.config['ENV'], 'testing')
 
 	def testFunctionalityofApp(self):

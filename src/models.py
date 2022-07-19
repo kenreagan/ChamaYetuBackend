@@ -25,9 +25,9 @@ class User(Base):
 	monthly_income = Column(String(250))
 	phone = Column(Integer, unique=True, nullable=False)
 	contribution_frequency = Column(Integer)
-	chama_id = Column(Integer, ForeignKey('chama.id'))
+	chama_id = Column(Integer, ForeignKey('groups.group_id'))
 	profile_picture = Column(String(300))
-	is_assigned_chama = Column(Boolean)
+	is_assigned_chama = Column(Boolean, default=False)
 	guarantors = relationship('Guarantors', lazy='dynamic', cascade="all, delete-orphan")
 
 	def __repr__(self) -> str:
@@ -71,7 +71,7 @@ class User(Base):
 
 class Guarantors(Base):
 	__tablename__ = 'guarantors'
-	id = Column(Integer, nullable=False)
+	id = Column(Integer, nullable=False, primary_key=True)
 	relationship = Column(String(250))
 	name = Column(String(250))
 	email = Column(String(250))
@@ -98,7 +98,7 @@ class Chama(Base):
 	status = Column(String(300), default='pending')
 
 	def __repr__(self):
-		pass
+		return f"{self.__class__.__qualname__}(chama_id={self.chama_id}, contribution={self.contribution_amount}, status={self.status})"
 	
 
 	def to_json(self):

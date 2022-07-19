@@ -15,6 +15,10 @@ def create_app(config_class='config.Config') -> Flask:
 
 	from src.users import users_router
 
+	from src.Chama import chama_router
+
 
 	api.register_blueprint(users_router, url_prefix='/users')
+
+	api.register_blueprint(chama_router, url_prefix='/chama')
 	return app
