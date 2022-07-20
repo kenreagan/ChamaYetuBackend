@@ -8,13 +8,18 @@ from src.schema import (
 	ContributionFrequencySchema,
 	UserListDisplay,
 	LoginSchema,
-	UserDisplaySchema
+	UserDisplaySchema,
+	PersonalInfoSchema
 )
 import uuid
 import threading
 from src.models import User, Guarantors
 from werkzeug.security import generate_password_hash, check_password_hash
-from sqlalchemy import insert, update
+from sqlalchemy import (
+	insert,
+	update,
+	select
+)
 from src.utils import verify_authentication_headers
 
 users_router = Blueprint('users', __name__)
@@ -59,16 +64,30 @@ class UserManager(MethodView):
 
 
 @users_router.route('/get/details/<userid>')
-@users_router.response(schema=UserDisplaySchema, status_code=200)
+@users_router.response(schema=PersonalInfoSchema, status_code=200)
 def get_details(userid):
 	with DatabaseContextManager() as context:
-		user = context.session.query(User).filter_by(uuid=userid).first()
-	return user.to_json()
+		user = context.session.query(
+				User
+			).filter(
+				User.uuid==userid
+			).first()
+		guarantors = context.session.query(
+			Guarantors
+		).filter(
+			Guarantors.user_id == userid
+		).all()
+	payload = user.to_json()
+	payload['guarantors'] = []
+	for results in guarantors:
+		payload['guarantors'].append(results.to_json())
+	return payload
 
 
 # Step two -> Employment Status
 @users_router.route('/add/employmentinfo', methods=['POST'])
 @users_router.arguments(schema=EmploymentInfoSchema)
+@users_router.response(schema=UserDisplaySchema, status_code=201)
 @verify_authentication_headers
 def add_employment_info(current_user, payload):
 	statement = update(User).values(
@@ -79,7 +98,7 @@ def add_employment_info(current_user, payload):
 	with DatabaseContextManager() as context:
 		context.session.execute(statement)
 		context.session.commit()
-	return payload
+	return current_user.to_json()
 
 
 # Step three -> guarantors
@@ -103,7 +122,9 @@ def add_guarantors(current_user, payload):
 @users_router.arguments(schema=LoginSchema)
 def login(payload):
 	with DatabaseContextManager() as context:
-		user = context.session.query(User).first()
+		user = context.session.query(User).filter(
+			User.email==payload['email']
+		).first()
 		if user:
 			if check_password_hash(user.password, payload['password']):
 				return {
@@ -119,6 +140,7 @@ def login(payload):
 # Step 4 -> Contribution Frequency
 @users_router.route('/add/contribution/frequency', methods=['POST'])
 @users_router.arguments(schema=ContributionFrequencySchema)
+@users_router.response(schema=UserDisplaySchema, status_code=201)
 @verify_authentication_headers
 def add_contribution_frequency(current_user, payload):
 	statement = update(User).values(
@@ -129,7 +151,7 @@ def add_contribution_frequency(current_user, payload):
 	with DatabaseContextManager() as context:
 		context.session.execute(statement)
 		context.session.commit()			
-	return
+	return current_user.to_json()
 
 # add admin priviledges to add members to groups
 @users_router.route('/join/chama', methods=['POST'])

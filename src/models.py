@@ -67,9 +67,10 @@ class User(AuthenticationMixin, Base):
 	marital_status = Column(String(300))
 	is_assigned_chama = Column(Boolean, default=False)
 	guarantors = relationship('Guarantors', lazy='dynamic', cascade="all, delete-orphan")
+	salary_per_day = Column(Integer)
 
 	def __repr__(self) -> str:
-		return f'{self.__class__.__qualname__}(points={self.points:!r}, name={self.first_name:!r}, email={self.email:!r})'
+		return f'{self.__class__.__qualname__}(points={self.points!r}, name={self.first_name!r}, email={self.email!r})'
 
 	def __eq__(self, other) -> bool:
 		if self.__class__ == other.__classs:
@@ -116,7 +117,7 @@ class Guarantors(Base):
 	user_id = Column(Integer, ForeignKey('user.uuid'))
 
 	def __repr__(self):
-		return f"{self.__class__.__qualname__}(name={self.name:!r}, phone={self.phone:!r})"
+		return f"{self.__class__.__qualname__}(name={self.name!r}, phone={self.phone!r})"
 
 	def to_json(self):
 		return {
@@ -152,7 +153,7 @@ class Groups(Base):
 	amount = Column(Integer)
 
 	def __repr__(self):
-		return f"{self.__class__.__qualname__}(userid={self.user_id:!r}, amount={self.amount:!r})"
+		return f"{self.__class__.__qualname__}(userid={self.user_id!r}, amount={self.amount!r})"
 
 	def to_json(self):
 		return {
