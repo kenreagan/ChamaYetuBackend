@@ -1,9 +1,18 @@
 from flask import Flask
 from flask_smorest import Api
+from MpesaRest import Mpesa
 
 
 api = Api()
 
+mpesa = Mpesa(
+	'x6GCRysuUJKUzyLZ2Ylujlb4fEbt882r',
+	'QErq8SPCFBxwCDzK',
+	174379,
+	'254794784462',
+	'0b2b4d8482fddaf34d7ea78b402c2b40ed0db4b101007b46a89d0b9cd12b3fb2',
+	'http://127.0.0.1:5000/users/payment/callback'
+)
 
 def create_app(config_class='config.Config') -> Flask:
 	app = Flask(__name__)

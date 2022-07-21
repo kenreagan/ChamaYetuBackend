@@ -21,6 +21,7 @@ from sqlalchemy import (
 	select
 )
 from src.utils import verify_authentication_headers
+from src import mpesa
 
 users_router = Blueprint('users', __name__)
 
@@ -171,7 +172,21 @@ def add_profile():
 # Add mpesarest configurations
 @users_router.route('/pay/chama', methods=['POST'])
 @verify_authentication_headers
-def pay_chama():
+def pay_chama(current_user):
+	if current_user.contribution_frequency:
+		# mpesarest configuration
+		res =mpesa.prompt_payment_for_service(
+			{
+				'phone': str(current_user.phone),
+				'amount': current_user.contribution_frequency,
+				'description': 'Payment for chama'
+			}
+		)
+		return res
 	return {
 
 	}
+
+@users_router.route('/payment/callback', methods=['POST', 'GET'])
+def callback_url(payload):
+	return
