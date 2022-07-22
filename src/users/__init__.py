@@ -10,7 +10,7 @@ from src.schema import (
 	LoginSchema,
 	UserDisplaySchema,
 	PersonalInfoSchema,
-	CreateChama,
+	AddUserChama,
 	ChamaSchema,
 	CallbackSchema
 )
@@ -114,6 +114,7 @@ def add_employment_info(current_user, payload):
 # Step three -> guarantors
 @users_router.route('/add/guarantors', methods=['POST'])
 @users_router.arguments(schema=GuarantorsSchema)
+@users_router.response(schema=GuarantorsSchema, status_code=201)
 @verify_authentication_headers
 def add_guarantors(current_user, payload):
 	payload['user_id'] = current_user.uuid
@@ -166,7 +167,7 @@ def add_contribution_frequency(current_user, payload):
 
 # add admin priviledges to add members to groups
 @users_router.route('/join/chama', methods=['POST'])
-@users_router.arguments(schema=CreateChama)
+@users_router.arguments(schema=AddUserChama)
 @verify_authentication_headers
 def join_chama(payload):
 	with DatabaseContextManager() as context:
@@ -175,42 +176,47 @@ def join_chama(payload):
 		).first()
 
 		if user:
-			while not user.is_assigned_chama:
-				chama = context.session.query(
-					Chama
-					).filter(
-						_and(
-							Chama.member_count < 3,
-							Chama.status == 'pending',
-							Chama.contribution_amount == User.contribution_frequency
-						)
-					).first()			
-
-				if chama:
-					user.chama_id = chama.chama_id
-					user.is_assigned_chama = True
-					chama.member_count += 1
-					context.session.commit()
-					break
-				else:
-					cstatement = insert(
+			if user.contribution_frequency is not None:
+				while not user.is_assigned_chama:
+					chama = context.session.query(
 						Chama
-					).values(
-						**{
-							'chama_name': uuid.uuid4().hex,
-							'contribution_amount': User.contribution_frequency
-						}
-					)
-					
-					context.session.execute(cstatement)
-					context.session.commit()
+						).filter(
+							_and(
+								Chama.member_count < 3,
+								Chama.status == 'pending',
+								Chama.contribution_amount == user.contribution_frequency
+							)
+						).first()			
+
+					if chama:
+						user.chama_id = chama.chama_id
+						user.is_assigned_chama = True
+						chama.member_count += 1
+						context.session.commit()
+						break
+					else:
+						cstatement = insert(
+							Chama
+						).values(
+							**{
+								'chama_name': uuid.uuid4().hex,
+								'contribution_amount': User.contribution_frequency
+							}
+						)
+						
+						context.session.execute(cstatement)
+						context.session.commit()
+			else:
+				return {
+					'Error': 'please add contribution frequency'
+				}
 		else:
 			return {
 				'Error': 'User does not exist'
 			}
 
 	return {
-			'Message': f'User added to Chama {chama.chama_name}'
+			'success': f'User added to Chama {chama.chama_name}'
 		} 
 
 

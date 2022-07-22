@@ -139,7 +139,7 @@ class EmploymentInfoSchema(Schema):
         validate=validate.OneOf(
             [
                 'permanent',
-                'private pratise',
+                'private practise',
                 'self employed',
                 'contract',
                 'part time',
@@ -307,5 +307,5 @@ class ChamaDisplaySchema(Schema):
         )
     )
 
-class CreateChama(Schema):
+class AddUserChama(Schema):
     userid = fields.String()
