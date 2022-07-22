@@ -4,7 +4,9 @@ from src.contextmanager import DatabaseContextManager
 from src.models import Chama
 import uuid
 from src.schema import (
-    ChamaSchema
+    ChamaSchema,
+    ChamaDisplaySchema,
+    ChamaCreateSchema
 )
 
 chama_router = Blueprint('chama endpoints', __name__)
@@ -22,7 +24,7 @@ class ChamaRoutes(MethodView):
             ]
         }
 
-    @chama_router.arguments(schema=ChamaCreateSchema, status_code=200)
+    @chama_router.arguments(schema=ChamaCreateSchema)
     @chama_router.response(schema=ChamaCreateSchema, status_code=200)
     def post(self, payload):
         payload['chama_name'] = uudi.uuid4().hex
@@ -57,7 +59,7 @@ class ChamaRoutes(MethodView):
             statement = delete(
                 Chama
             ).where(
-                Chama.chama_id = payload['chama_id']
+                Chama.chama_id == payload['chama_id']
             )
 
             context.session.execute(statement)

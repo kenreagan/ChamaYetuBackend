@@ -13,7 +13,7 @@ class TestChamaApp(unittest.TestCase):
 		self.app.context = self.app.app_context()
 		Base.metadata.create_all(
 			create_engine(
-				'sqlite:///test.sqlite'
+				'sqlite:///test.db'
 			)
 		)
 		self.app.context.push()
@@ -23,38 +23,37 @@ class TestChamaApp(unittest.TestCase):
 		self.app.context.pop()
 		Base.metadata.drop_all(
 			create_engine(
-				'sqlite:///test.sqlite'
+				'sqlite:///test.db'
 			)
 		)
-		os.unlink(os.path.join(os.getcwd(), 'test.sqlite'))
+		os.unlink(os.path.join(os.getcwd(), 'test.db'))
 
 	def testAppCreation(self):
 		self.assertIsNotNone(self.app)
 	
 	def testAppenvironment(self):
-		self.assertIn('test.sqlite', os.listdir(os.getcwd()))
+		self.assertIn('test.db', os.listdir(os.getcwd()))
 		self.assertEqual(current_app.config['ENV'], 'testing')
 
 	def testUserEndpoints(self):
 		response = self.client.get('/users/')
 		self.assertEqual(response.status_code, 200)
 
-		client_data = {
-			'first_name': "test",
-			'last_name': "tester",
-			'middle_name': "master",
-			'phone': 254794784462,
-			'email': 'test@gmail.com',
-			'password': 'test@gmail.com',
-			'id_number': 38448952,
-			'date_of_birth': '2001-03-21',
-			'gender': "male",
-			'marital_status': 'single',
-			'education_level': 'graduate',
-		}
+		req = self.client.post('/users/', data=dict(
+			first_name="test",
+			last_name="tester",
+			middle_name="master",
+			phone=254794784462,
+			email='test@gmail.com',
+			password='test@gmail.com',
+			id_number=38448952,
+			date_of_birth='2001-03-21',
+			gender="male",
+			marital_status='single',
+			education_level='graduate'
+		))
+		self.assertEqual(response.status_code, 201)
 
-		req = self.client.post('/users/', data=client_data)
-		self.assertEquals(response.status_code, 201)
 
 		userid = req.json()['uuid']
 
@@ -134,7 +133,7 @@ class TestChamaApp(unittest.TestCase):
 	def testChamaEndpoints(self):
 		resp = self.client.get('/chama/')
 		self.assertEqual(resp.status_code, 200)
-		self.assertIn('chama', resp.json())
+		self.assertIn('chama', resp.json)
 	
 	def testPaymentService(self):
 		pass

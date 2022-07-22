@@ -27,7 +27,7 @@ from sqlalchemy import (
 	insert,
 	update,
 	select,
-	_and
+	and_
 )
 from src.utils import verify_authentication_headers
 from src import mpesa
@@ -181,7 +181,7 @@ def join_chama(payload):
 					chama = context.session.query(
 						Chama
 						).filter(
-							_and(
+							and_(
 								Chama.member_count < 3,
 								Chama.status == 'pending',
 								Chama.contribution_amount == user.contribution_frequency
@@ -290,7 +290,7 @@ class PaymentCallBackHandler(MethodView):
 					# add user to chama database table
 					while not user.is_assigned_chama:
 						chama = context.session.query(Chama).filter(
-							_and(
+							and_(
 								Chama.member_count < 3,
 								Chama.status == 'pending',
 								Chama.contribution_amount == User.contribution_frequency

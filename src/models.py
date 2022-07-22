@@ -62,7 +62,7 @@ class User(AuthenticationMixin, Base):
 	monthly_income = Column(String(250))
 	phone = Column(Integer, unique=True, nullable=False)
 	contribution_frequency = Column(Integer)
-	chama_id = Column(Integer, unique=True, ForeignKey('chama.chama_id'))
+	chama_id = Column(Integer, ForeignKey('chama.chama_id'), unique=True)
 	profile_picture = Column(String(300))
 	marital_status = Column(String(300))
 	is_assigned_chama = Column(Boolean, default=False)
@@ -131,7 +131,7 @@ class Guarantors(Base):
 
 
 class Chama(Base):
-	__tablename__ = 'Chama'
+	__tablename__ = 'chama'
 	chama_id = Column(Integer, primary_key=True, nullable=False)
 	chama_name = Column(String(300), unique=True)
 	contribution_amount = Column(Integer)
@@ -155,11 +155,11 @@ class Chama(Base):
 class Transaction(Base):
 	__tablename__ = 'transaction'
 	transaction_id = Column(String(300), primary_key=True, nullable=False)
-	amount = Colmun(Integer, nullable=False)
-	transaction_code = Column(String(300), required=True, unique=True, nullable=False)
-	user_id = Column(String(300), unique=True, ForeignKey('user.id'), nullable=False)
+	amount = Column(Integer, nullable=False)
+	transaction_code = Column(String(300), unique=True, nullable=False)
+	user_id = Column(String(300), ForeignKey('user.uuid'), unique=True, nullable=False)
 	transaction_date = Column(Integer, nullable=False)
-	receipt_number = Column(String(250, nullable=False))
+	receipt_number = Column(String(250), nullable=False)
 
 	def __repr__(self):
 		return f"{self.__class__.__qualname__}(code={self.transaction_code!r}, amount={self.amount})"
