@@ -62,12 +62,13 @@ class User(AuthenticationMixin, Base):
 	monthly_income = Column(String(250))
 	phone = Column(Integer, unique=True, nullable=False)
 	contribution_frequency = Column(Integer)
-	chama_id = Column(Integer, ForeignKey('groups.group_id'))
+	chama_id = Column(Integer, unique=True, ForeignKey('chama.chama_id'))
 	profile_picture = Column(String(300))
 	marital_status = Column(String(300))
 	is_assigned_chama = Column(Boolean, default=False)
 	guarantors = relationship('Guarantors', lazy='dynamic', cascade="all, delete-orphan")
 	salary_per_day = Column(Integer)
+	transaction = relationship('Transaction', lazy='dynamic', cascade="all, delete-orphan")
 
 	def __repr__(self) -> str:
 		return f'{self.__class__.__qualname__}(points={self.points!r}, name={self.first_name!r}, email={self.email!r})'
@@ -104,7 +105,8 @@ class User(AuthenticationMixin, Base):
 			'joining_date': self.date_joined,
 			'date_of_birth': self.date_of_birth,
 			'profile': self.profile_picture,
-			'chama_status': self.is_assigned_chama
+			'chama_status': self.is_assigned_chama,
+			'chama_id': self.chama_id
 		}
 
 class Guarantors(Base):
@@ -130,9 +132,12 @@ class Guarantors(Base):
 
 class Chama(Base):
 	__tablename__ = 'Chama'
-	chama_id = Column(String(300), primary_key=True, nullable=False)
-	members = Column(Integer)
+	chama_id = Column(Integer, primary_key=True, nullable=False)
+	chama_name = Column(String(300), unique=True)
 	contribution_amount = Column(Integer)
+	user = relationship('User', lazy='dynamic')
+	member_count = Column(Integer, nullable=False, default=0)
+
 	status = Column(String(300), default='pending')
 
 	def __repr__(self):
@@ -141,22 +146,42 @@ class Chama(Base):
 
 	def to_json(self):
 		return {
-			"members": self.members,
-			"contribution": self.contribution_amount
+			"member_count": self.member_count,
+			"contribution": self.contribution_amount,
+			"name": self.chama_name,
+			"id": self.chama_id
 		}
 
-# Split people into 3 groups
-class Groups(Base):
-	__tablename__ = 'groups'
-	group_id = Column(String(300), primary_key=True, nullable=False, unique=True)
-	user_id = Column(Integer, unique=True)
-	amount = Column(Integer)
+class Transaction(Base):
+	__tablename__ = 'transaction'
+	transaction_id = Column(String(300), primary_key=True, nullable=False)
+	amount = Colmun(Integer, nullable=False)
+	transaction_code = Column(String(300), required=True, unique=True, nullable=False)
+	user_id = Column(String(300), unique=True, ForeignKey('user.id'), nullable=False)
+	transaction_date = Column(Integer, nullable=False)
+	receipt_number = Column(String(250, nullable=False))
 
 	def __repr__(self):
-		return f"{self.__class__.__qualname__}(userid={self.user_id!r}, amount={self.amount!r})"
+		return f"{self.__class__.__qualname__}(code={self.transaction_code!r}, amount={self.amount})"
 
 	def to_json(self):
 		return {
-			"userid": self.user_id,
-			"amount": self.amount
+			'amount': self.amount,
+			'transaction_code': self.transaction_code,
+			'user_id': self.user_id
 		}
+
+	def __eq__(self, other):
+		if self.__class__ == other.__class__:
+			return self.amount == other.amount
+		raise NotImplementedError('Cannot compare different class instances')
+	
+	def __lt__(self, other):
+		if self.__class__ == other.__class__:
+			return self.amount < other.amount
+		raise NotImplementedError('Cannot compare different class instances')
+
+	def __gt__(self, other):
+		if self.__class__ == other.__class__:
+			return self.amount > other.amount
+		raise NotImplementedError('Cannot compare different class instances')

@@ -9,16 +9,25 @@ from src.schema import (
 	UserListDisplay,
 	LoginSchema,
 	UserDisplaySchema,
-	PersonalInfoSchema
+	PersonalInfoSchema,
+	CreateChama,
+	ChamaSchema,
+	CallbackSchema
 )
 import uuid
 import threading
-from src.models import User, Guarantors
+from src.models import (
+	User,
+	Guarantors,
+	Transaction,
+	Chama
+)
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import (
 	insert,
 	update,
-	select
+	select,
+	_and
 )
 from src.utils import verify_authentication_headers
 from src import mpesa
@@ -154,13 +163,56 @@ def add_contribution_frequency(current_user, payload):
 		context.session.commit()			
 	return current_user.to_json()
 
+
 # add admin priviledges to add members to groups
 @users_router.route('/join/chama', methods=['POST'])
+@users_router.arguments(schema=CreateChama)
 @verify_authentication_headers
-def join_chama():
+def join_chama(payload):
+	with DatabaseContextManager() as context:
+		user = context.session.query(User).filter(
+			User.uuid == payload['userid']
+		).first()
+
+		if user:
+			while not user.is_assigned_chama:
+				chama = context.session.query(
+					Chama
+					).filter(
+						_and(
+							Chama.member_count < 3,
+							Chama.status == 'pending',
+							Chama.contribution_amount == User.contribution_frequency
+						)
+					).first()			
+
+				if chama:
+					user.chama_id = chama.chama_id
+					user.is_assigned_chama = True
+					chama.member_count += 1
+					context.session.commit()
+					break
+				else:
+					cstatement = insert(
+						Chama
+					).values(
+						**{
+							'chama_name': uuid.uuid4().hex,
+							'contribution_amount': User.contribution_frequency
+						}
+					)
+					
+					context.session.execute(cstatement)
+					context.session.commit()
+		else:
+			return {
+				'Error': 'User does not exist'
+			}
+
 	return {
-		'': ''
-	}
+			'Message': f'User added to Chama {chama.chama_name}'
+		} 
+
 
 # Add profile picture
 @users_router.route('/add/profile', methods=['POST'])
@@ -175,7 +227,7 @@ def add_profile():
 def pay_chama(current_user):
 	if current_user.contribution_frequency:
 		# mpesarest configuration
-		res =mpesa.prompt_payment_for_service(
+		res = mpesa.prompt_payment_for_service(
 			{
 				'phone': str(current_user.phone),
 				'amount': current_user.contribution_frequency,
@@ -184,9 +236,76 @@ def pay_chama(current_user):
 		)
 		return res
 	return {
-
+		'Error': 'Please update your contribution frequency'
 	}
 
-@users_router.route('/payment/callback', methods=['POST', 'GET'])
-def callback_url(payload):
-	return
+
+@users_router.route('/payment/callback')
+class PaymentCallBackHandler(MethodView):
+	@users_router.arguments(schema=CallbackSchema, location='params')
+	def get(self, params):
+		# checkout transaction status
+		if params:
+			if params['CheckoutRequestID']:
+				response = mpesa.check_lipa_na_mpesa_status(
+					params['CheckoutRequestID']
+				)
+				return response
+		return {
+			'Error': 'missing params'
+		}
+	
+	def post(self, payload):
+		status = payload['Body']['stkCallback']
+		if status['ResultCode'] == 0:
+			with DatabaseContextManager() as context:
+				user = context.session.query(User).filter(
+					User.phone == status['CallbackMetadata']['Item'][3]['Value']
+				).first()
+
+				user.points += 100
+
+				if user:
+					statement = insert(
+							Transaction
+						).values(
+							**{
+								'amount': status['CallbackMetadata']['Item'][0]['Value'],
+								'transaction_date': status['CallbackMetadata']['Item'][2]['Value'],
+								'receipt_number': status['CallbackMetadata']['Item'][1]['Value'],
+								'transaction_code': status['CheckoutRequestID'],
+								'user_id': user.uuid
+							}
+						)				
+
+					context.session.execute(statement)
+					context.session.commit()
+
+					# add user to chama database table
+					while not user.is_assigned_chama:
+						chama = context.session.query(Chama).filter(
+							_and(
+								Chama.member_count < 3,
+								Chama.status == 'pending',
+								Chama.contribution_amount == User.contribution_frequency
+							)
+						).first()			
+
+						if chama:
+							user.chama_id = chama.chama_id
+							user.is_assigned_chama = True
+							chama.member_count += 1
+							context.session.commit()
+						else:
+							cstatement = insert(
+								Chama
+							).values(
+								**{
+									'chama_name': uuid.uuid4().hex,
+									'contribution_amount': User.contribution_frequency
+								}
+							)
+
+							context.session.execute(cstatement)
+							context.session.commit()
+

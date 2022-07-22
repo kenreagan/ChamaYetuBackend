@@ -80,6 +80,8 @@ class UserDisplaySchema(Schema):
 
     points = fields.Integer()
     employment = fields.String()
+    chama_id = fields.Integer()
+    chama_status = fields.Boolean()
 
 class UserListDisplay(Schema):
     subscribers = fields.List(
@@ -284,3 +286,26 @@ class ContributionFrequencySchema(Schema):
 
 class ProfileSchema(Schema):
     profile = fields.String(required=True)
+
+
+class CallbackSchema(Schema):
+    pass
+
+class ChamaCreateSchema(Schema):
+    contribution_amount = fields.Integer()
+
+class ChamaSchema(Schema):
+    chama_name = fields.String()
+    contribution = fields.Integer()
+    member_count = fields.Integer()
+    chama_id = fields.Integer()
+
+class ChamaDisplaySchema(Schema):
+    chama = fields.List(
+        fields.Nested(
+            ChamaSchema
+        )
+    )
+
+class CreateChama(Schema):
+    userid = fields.String()

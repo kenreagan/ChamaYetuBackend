@@ -32,6 +32,15 @@ class TestChamaApp(unittest.TestCase):
 	def testFunctionalityofApp(self):
 		pass
 
+	def testUserEndpoints(self):
+		pass
+	
+	def testChamaEndpoints(self):
+		pass
+	
+	def testPaymentService(self):
+		pass
+
 
 if __name__ == '__main__':
 	unittest.main()
