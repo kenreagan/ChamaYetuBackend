@@ -121,7 +121,6 @@ def add_guarantors(current_user, payload):
 	statement = insert(Guarantors).values(
 		**payload
 	)
-	print(statement)
 	with DatabaseContextManager() as context:
 		context.session.execute(statement)
 		context.session.commit()

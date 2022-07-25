@@ -18,7 +18,7 @@ Base.metadata.create_all(
 class DatabaseContextManager:
     def __init__(self):
         self.databasefilename: str = 'sqlite:///test.db' if current_app.config['ENV'] == 'testing' else f'sqlite:///main.sqlite'
-        self.engine = create_engine(self.databasefilename, echo=True)
+        self.engine = create_engine(self.databasefilename, echo=False)
         self.Session = sessionmaker(bind=self.engine, expire_on_commit=False)
 
     def __enter__(self):

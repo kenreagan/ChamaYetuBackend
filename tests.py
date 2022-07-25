@@ -13,7 +13,8 @@ class TestChamaApp(unittest.TestCase):
 		self.app.context = self.app.app_context()
 		Base.metadata.create_all(
 			create_engine(
-				'sqlite:///test.db'
+				'sqlite:///test.db',
+				echo=False
 			)
 		)
 		self.app.context.push()
