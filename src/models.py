@@ -62,7 +62,7 @@ class User(AuthenticationMixin, Base):
 	monthly_income = Column(String(250))
 	phone = Column(Integer, unique=True, nullable=False)
 	contribution_frequency = Column(Integer)
-	chama_id = Column(Integer, ForeignKey('chama.chama_id'), unique=True)
+	chama_id = Column(Integer, ForeignKey('chama.chama_id'))
 	profile_picture = Column(String(300))
 	marital_status = Column(String(300))
 	is_assigned_chama = Column(Boolean, default=False)

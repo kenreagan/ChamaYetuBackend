@@ -16,7 +16,7 @@ mpesa = Mpesa(
 	174379,
 	'254794784462',
 	'0b2b4d8482fddaf34d7ea78b402c2b40ed0db4b101007b46a89d0b9cd12b3fb2',
-	'https://taskwithmeke/users/payment/callback/'
+	'https://8b1f-41-81-82-230.in.ngrok.io/users/payment/callback/'
 )
 
 def create_app(config_class='config.Config') -> Flask:

@@ -168,14 +168,14 @@ def add_contribution_frequency(current_user, payload):
 @users_router.route('/join/chama', methods=['POST'])
 @users_router.arguments(schema=AddUserChama)
 @verify_authentication_headers
-def join_chama(payload):
+def join_chama(current_user, payload):
 	with DatabaseContextManager() as context:
 		user = context.session.query(User).filter(
 			User.uuid == payload['userid']
 		).first()
 
 		if user:
-			if user.contribution_frequency is not None:
+			if user.contribution_frequency:
 				while not user.is_assigned_chama:
 					chama = context.session.query(
 						Chama
@@ -199,7 +199,7 @@ def join_chama(payload):
 						).values(
 							**{
 								'chama_name': uuid.uuid4().hex,
-								'contribution_amount': User.contribution_frequency
+								'contribution_amount': user.contribution_frequency
 							}
 						)
 						
