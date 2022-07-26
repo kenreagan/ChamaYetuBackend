@@ -244,7 +244,7 @@ def pay_chama(current_user):
 		'Error': 'Please update your contribution frequency'
 	}
 
-
+# Check if user exists in chama else carryout normal payment
 @users_router.route('/payment/callback')
 class PaymentCallBackHandler(MethodView):
 	@users_router.arguments(schema=CallbackSchema, location='params')
@@ -268,9 +268,8 @@ class PaymentCallBackHandler(MethodView):
 					User.phone == status['CallbackMetadata']['Item'][3]['Value']
 				).first()
 
-				user.points += 100
-
 				if user:
+					user.points += 100
 					statement = insert(
 							Transaction
 						).values(
@@ -285,6 +284,10 @@ class PaymentCallBackHandler(MethodView):
 
 					context.session.execute(statement)
 					context.session.commit()
+
+					if user.is_assigned_chama:
+						# update scheduled date for payment and paymentg date
+						user.last_payment = status['CallbackMetadata']['Item'][2]['Value']
 
 					# add user to chama database table
 					while not user.is_assigned_chama:

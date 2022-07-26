@@ -68,6 +68,7 @@ class User(AuthenticationMixin, Base):
 	is_assigned_chama = Column(Boolean, default=False)
 	guarantors = relationship('Guarantors', lazy='dynamic', cascade="all, delete-orphan")
 	salary_per_day = Column(Integer)
+	last_payment = Column(DateTime)
 	transaction = relationship('Transaction', lazy='dynamic', cascade="all, delete-orphan")
 
 	def __repr__(self) -> str:

@@ -137,7 +137,21 @@ class TestChamaApp(unittest.TestCase):
 		self.assertIn('chama', resp.json)
 	
 	def testPaymentService(self):
-		pass
+		mpesa = Mpesa(
+			'x6GCRysuUJKUzyLZ2Ylujlb4fEbt882r',
+			'QErq8SPCFBxwCDzK',
+			174379,
+			'254794784462',
+			'0b2b4d8482fddaf34d7ea78b402c2b40ed0db4b101007b46a89d0b9cd12b3fb2',
+			'https://taskwithmeke/users/payment/callback/'
+		)
+
+		claim_payment = mpesa.prompt_payment_for_service({
+			'phone': '0794784462',
+			'amount': 300
+		})
+
+		self.assertIsNotNone(claim_payment)
 
 	def testUtilsFunctionality(self):
 		pass

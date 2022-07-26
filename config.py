@@ -16,6 +16,7 @@ class Config(object):
 	OPENAPI_SWAGGER_UI_PATH = '/docs'
 	OPENAPI_SWAGGER_UI_URL = 'https://cdn.jsdelivr.net/npm/swagger-ui-dist/'
 	JSONIFY_PRETTYPRINT_REGULAR = True
+	FLASK_ADMIN_SWATCH = 'cerulean'
 	
 class TestingConfig(Config):
 	ENV = 'testing'
