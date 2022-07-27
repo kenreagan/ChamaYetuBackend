@@ -5,18 +5,22 @@ from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
+import os
 
 api = Api()
 
 admin = Admin(name="ChamaYettu", template_mode='bootstrap3')
 
 mpesa = Mpesa(
-	'x6GCRysuUJKUzyLZ2Ylujlb4fEbt882r',
-	'QErq8SPCFBxwCDzK',
-	174379,
-	'254794784462',
-	'0b2b4d8482fddaf34d7ea78b402c2b40ed0db4b101007b46a89d0b9cd12b3fb2',
-	'https://8b1f-41-81-82-230.in.ngrok.io/users/payment/callback/'
+    consumer_key= os.environ.get('CONSUMER_KEY'),
+    consumer_secret=os.environ.get('CONSUMER_SECRET'),
+    business_code=os.environ.get('BUSINESS_CODE'),
+    passcode= os.environ.get('PASSCODE'),
+    call_back=os.environ.get('CALL_BACK_URL'),
+    environment=os.environ.get('MPESA_ENVIRONMENT'),
+    phone_number=os.environ.get('CUSTOMER_PHONE'),
+    BusinessShortCode=os.environ.get('SHORT_CODE'),
+    Accountreference=os.environ.get('MYCOMPANY')
 )
 
 def create_app(config_class='config.Config') -> Flask:

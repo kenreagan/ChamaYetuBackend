@@ -22,7 +22,8 @@ class AuthenticationMixin:
     @staticmethod
     def decode_token(token):
         try:
-            payload = jwt.decode(token, key=current_app.config['SECRET_KEY'], algorithms=['HS256'])
+            payload = jwt.decode(
+                token, key=current_app.config['SECRET_KEY'], algorithms=['HS256'])
             return payload['sub']
         except jwt.ExpiredSignatureError:
             return {
@@ -67,19 +68,22 @@ class User(AuthenticationMixin, Base):
 	profile_picture = Column(String(300))
 	marital_status = Column(String(300))
 	is_assigned_chama = Column(Boolean, default=False)
-	guarantors = relationship('Guarantors', lazy='dynamic', cascade="all, delete-orphan")
+	guarantors = relationship('Guarantors', lazy='dynamic',
+	                cascade="all, delete-orphan"
+                )
 	salary_per_day = Column(Integer)
 	last_payment = Column(DateTime)
-	transaction = relationship('Transaction', lazy='dynamic', cascade="all, delete-orphan")
-    is_admin = Column(Boolean, default=False)
-    date_paid = Column(DateTime, default=None)
+	transaction = relationship(
+	    'Transaction', lazy='dynamic', cascade="all, delete-orphan")
+	is_admin = Column(Boolean, default=False)
+	date_paid = Column(DateTime, default=None)
 
 	def __repr__(self) -> str:
 		return f'{self.__class__.__qualname__}(points={self.points!r}, name={self.first_name!r}, email={self.email!r})'
 
 	def __eq__(self, other) -> bool:
 		if self.__class__ == other.__classs:
-			return self.points == other.points
+		    return self.points == other.points
 
 	def __gt__(self, other) -> bool:
 		if self.__class__ == other.__classs:
@@ -88,7 +92,7 @@ class User(AuthenticationMixin, Base):
 	def __lt__(self, other) -> bool:
 		if self.__class__ == other.__classs:
 			return self.points < other.points
-	
+
 	def __ne__(self, other) -> bool:
 		return not self.__eq__(other)
 
@@ -114,6 +118,7 @@ class User(AuthenticationMixin, Base):
 			'chama_status': self.is_assigned_chama,
 			'chama_id': self.chama_id
 		}
+
 
 class Guarantors(Base):
 	__tablename__ = 'guarantors'
@@ -147,10 +152,9 @@ class Chama(Base):
 	funds_disbursed = Column(Boolean, default=False)
 
 	status = Column(String(300), default='pending')
- 
- 
+
 	def __init__(self, *args, **kwargs):
-		super(self, Chama).__init__(*args, **kwargs):
+		super(self, Chama).__init__(*args, **kwargs)
 		self.date_created = datetime.datetime.utcnow()
 		funds_disbursed = False
 		chama_id = uuid.uuid4().hex
