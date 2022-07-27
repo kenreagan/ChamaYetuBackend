@@ -309,3 +309,8 @@ class ChamaDisplaySchema(Schema):
 
 class AddUserChama(Schema):
     userid = fields.String()
+    
+
+class ChamaDisburseSchema(Schema):
+    Remarks = fields.String()
+    chamaname = fields.String()

@@ -1,3 +1,4 @@
+from flask import abort
 from flask_smorest import Blueprint
 from flask.views import MethodView
 from src.contextmanager import DatabaseContextManager
@@ -31,6 +32,7 @@ from sqlalchemy import (
 )
 from src.utils import verify_authentication_headers
 from src import mpesa
+import datetime
 
 users_router = Blueprint('users', __name__)
 
@@ -317,3 +319,45 @@ class PaymentCallBackHandler(MethodView):
 							context.session.execute(cstatement)
 							context.session.commit()
 
+
+
+@users_router.route('/distribute/funds/chama/', methods=['POST'])
+@users_router.arguments(schema=ChamaDisburseSchema)
+@verify_authentication_headers
+def distribute_chama(current_user, payload):
+    if current_user.is_admin:
+        thirty_days_count = datetime.datetime.timedelta(days=30)
+        with DatabaseContextManager() as context:
+            chama = context.session.query(
+            	    Chama
+            	).filter_by(
+                	chamaname=payload['chamaname']
+            	).first()
+            while not chama.funds_disbursed:
+				if (chama.date_created + thirty_days_count).day => datetime.datetime.today().day:
+					# Get the users in chama and locate the ones paid also get the status of chama if it is not pending
+					users = context.session.query(User).filter(
+						and_(
+							User.chama_id == chama.id
+						)
+					).all()
+					for user in users:
+						# if the user in this chama is already paid funds are disbursed to the next user
+						if not user.last_payment:
+							# pay person
+							mpesa.initialize_business_to_client(
+								clientphonenumber=user.phone,
+								Amount=chama.contribution_amount,
+								Remarks=ChamaDisburseSchema['Remarks']
+							)
+							chama.funds_disbursed = True
+							break
+						else:
+							pass
+	return abort(403)
+
+# Business to Client
+@users_router.route('/diburse/funds/chama/chamamember/<uuid>', methods=['POST'])
+@verify_authentication_headers
+def disburse_funds(userid, uuid):
+    pass

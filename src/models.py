@@ -5,6 +5,7 @@ import datetime
 import jwt
 from typing import Dict
 from flask import current_app
+import uuid
 
 Base = declarative_base()
 
@@ -70,6 +71,8 @@ class User(AuthenticationMixin, Base):
 	salary_per_day = Column(Integer)
 	last_payment = Column(DateTime)
 	transaction = relationship('Transaction', lazy='dynamic', cascade="all, delete-orphan")
+    is_admin = Column(Boolean, default=False)
+    date_paid = Column(DateTime, default=None)
 
 	def __repr__(self) -> str:
 		return f'{self.__class__.__qualname__}(points={self.points!r}, name={self.first_name!r}, email={self.email!r})'
@@ -88,6 +91,8 @@ class User(AuthenticationMixin, Base):
 	
 	def __ne__(self, other) -> bool:
 		return not self.__eq__(other)
+
+	# add listeners to date paid and set to 30 days after post
 
 	def to_json(self):
 		return {
@@ -138,8 +143,17 @@ class Chama(Base):
 	contribution_amount = Column(Integer)
 	user = relationship('User', lazy='dynamic')
 	member_count = Column(Integer, nullable=False, default=0)
+	date_created = Column(DateTime, nullable=False, default=datetime.datetime.utcnow)
+	funds_disbursed = Column(Boolean, default=False)
 
 	status = Column(String(300), default='pending')
+ 
+ 
+	def __init__(self, *args, **kwargs):
+		super(self, Chama).__init__(*args, **kwargs):
+		self.date_created = datetime.datetime.utcnow()
+		funds_disbursed = False
+		chama_id = uuid.uuid4().hex
 
 	def __repr__(self):
 		return f"{self.__class__.__qualname__}(chama_id={self.chama_id}, contribution={self.contribution_amount}, status={self.status})"
@@ -150,7 +164,9 @@ class Chama(Base):
 			"member_count": self.member_count,
 			"contribution": self.contribution_amount,
 			"name": self.chama_name,
-			"id": self.chama_id
+			"id": self.chama_id,
+			"date_created": self.date_created,
+			"funds_disbursed": False
 		}
 
 class Transaction(Base):
