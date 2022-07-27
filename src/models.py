@@ -77,7 +77,7 @@ class User(AuthenticationMixin, Base):
 	    'Transaction', lazy='dynamic', cascade="all, delete-orphan")
 	is_admin = Column(Boolean, default=False)
 	date_paid = Column(DateTime, default=None)
-
+ 
 	def __repr__(self) -> str:
 		return f'{self.__class__.__qualname__}(points={self.points!r}, name={self.first_name!r}, email={self.email!r})'
 
@@ -158,6 +158,9 @@ class Chama(Base):
 		self.date_created = datetime.datetime.utcnow()
 		funds_disbursed = False
 		chama_id = uuid.uuid4().hex
+
+		if self.member_count == 3:
+			self.status = "complete"
 
 	def __repr__(self):
 		return f"{self.__class__.__qualname__}(chama_id={self.chama_id}, contribution={self.contribution_amount}, status={self.status})"

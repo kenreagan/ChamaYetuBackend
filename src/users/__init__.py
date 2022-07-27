@@ -181,16 +181,25 @@ def join_chama(current_user, payload):
 
         if user:
             if user.contribution_frequency:
+                # pay to be added to chama
+                pay_for_chama = mpesa.prompt_payment_for_service(
+					{
+						'phone': str(user.phone),
+						'amount': user.contribution_frequency,
+						'description': "Pay Service"
+					}
+				)
+                if 'Errors' in pay_for_chama:
+                    return pay_for_chama
                 while not user.is_assigned_chama:
                     chama = context.session.query(
                         Chama
                     ).filter(
                         and_(
                             Chama.member_count < 3,
-                            Chama.status == 'pending',
                             Chama.contribution_amount == user.contribution_frequency
-                            )
-                        ).first()
+                        )
+                    ).first()
 
                     if chama:
                         user.chama_id = chama.chama_id
