@@ -82,7 +82,7 @@ class User(AuthenticationMixin, Base):
 		return f'{self.__class__.__qualname__}(points={self.points!r}, name={self.first_name!r}, email={self.email!r})'
 
 	def __eq__(self, other) -> bool:
-		if self.__class__ == other.__classs:
+		if self.__class__ == other.__class__:
 		    return self.points == other.points
 
 	def __gt__(self, other) -> bool:
