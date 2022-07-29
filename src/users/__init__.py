@@ -1,4 +1,4 @@
-from flask import abort
+from flask import abort, request
 from flask_smorest import Blueprint
 from flask.views import MethodView
 from src.contextmanager import DatabaseContextManager
@@ -31,11 +31,17 @@ from sqlalchemy import (
     select,
     and_
 )
-from src.utils import verify_authentication_headers
-from src import mpesa
+from src.utils import (
+    verify_authentication_headers,
+    PaymentService
+)
 import datetime
+import os
 
 users_router = Blueprint('users', __name__)
+
+
+mpesa = PaymentService(os.environ.get('CONSUMER_KEY'), os.environ.get('CONSUMER_SECRET'))
 
 
 @users_router.route('/')
@@ -182,48 +188,63 @@ def join_chama(current_user, payload):
         if user:
             if user.contribution_frequency:
                 # pay to be added to chama
-                pay_for_chama = mpesa.prompt_payment_for_service(
-					{
-						'phone': str(user.phone),
-						'amount': user.contribution_frequency,
-						'description': "Pay Service"
-					}
+                req = mpesa.prompt_payment_for_service(
+				    user.phone,
+                    user.contribution_frequency,
+					"Join One Chama in Chamayettu"
 				)
                 
-                if pay_for_chama['errors']:
-                    return pay_for_chama
+                response = req.json()
                 
-                else:
-                    while not user.is_assigned_chama:
-                        chama = context.session.query(
-                            Chama
-                        ).filter(
-                            and_(
-                                Chama.member_count < 3,
-                                Chama.status == "pending",
-                                Chama.contribution_amount == user.contribution_frequency
-                            )
-                        ).first()
+                if req.status_code != 200:
+                    out_ = {
+                        'errors': [
+                            response['errorMessage']
+                        ]
+                    }
+                    return out_
+                out_ = {
+                    'Response': {
+                        'Message': response['CustomerMessage'],
+                        'Code': response['ResponseCode'],
+                        'Description': response['ResponseDescription'],
+                        'MerchantID': response['MerchantRequestID'],
+                        'CustomerID': response['CheckoutRequestID']
+                    }
+                }
+                
+                return out_
+                
+                # while not user.is_assigned_chama:
+                #     chama = context.session.query(
+                #         Chama
+                #     ).filter(
+                #         and_(
+                #             Chama.member_count < 3,
+                #             Chama.status == "pending",
+                #             Chama.contribution_amount == user.contribution_frequency
+                #         )
+                #     ).first()
 
-                        if chama:
-                            user.chama_id = chama.chama_id
-                            user.points += 100
-                            user.is_assigned_chama = True
-                            chama.member_count += 1
-                            context.session.commit()
-                            break
-                        else:
-                            cstatement = insert(
-                                Chama
-                            ).values(
-                                **{
-                                    'chama_name': uuid.uuid4().hex,
-                                    'contribution_amount': user.contribution_frequency
-                                }
-                            )
+                #     if chama:
+                #         user.chama_id = chama.chama_id
+                #         user.points += 100
+                #         user.is_assigned_chama = True
+                #         chama.member_count += 1
+                #         context.session.commit()
+                #         break
+                #     else:
+                #         cstatement = insert(
+                #             Chama
+                #         ).values(
+                #             **{
+                #                 'chama_name': uuid.uuid4().hex,
+                #                 'contribution_amount': user.contribution_frequency
+                #             }
+                #         )
 
-                            context.session.execute(cstatement)
-                            context.session.commit()
+                #         context.session.execute(cstatement)
+                #         context.session.commit()
             else:
                 return {
                     'Error': 'please add contribution frequency'
@@ -252,11 +273,9 @@ def pay_chama(current_user):
     if current_user.contribution_frequency:
         # mpesarest configuration
         res = mpesa.prompt_payment_for_service(
-            {
-                'phone': str(current_user.phone),
-                'amount': current_user.contribution_frequency,
-                        'description': 'Payment for chama'
-            }
+            current_user.phone,
+            current_user.contribution_frequency,
+			"Regular payment for Chama in Chamayettu"
         )
         return res
     return {
@@ -281,7 +300,8 @@ class PaymentCallBackHandler(MethodView):
             'Error': 'missing params'
         }
 
-    def post(self, payload):
+    def post(self):
+        payload = request.get_json()
         status = payload['Body']['stkCallback']
         if status['ResultCode'] == 0:
             with DatabaseContextManager() as context:
@@ -289,7 +309,7 @@ class PaymentCallBackHandler(MethodView):
                     User.phone == status['CallbackMetadata']['Item'][3]['Value']
                 ).first()
 
-                if user:
+                if user:        
                     user.points += 100
                     statement = insert(
                         Transaction
@@ -307,7 +327,7 @@ class PaymentCallBackHandler(MethodView):
                     context.session.commit()
 
                     if user.is_assigned_chama:
-                        # update scheduled date for payment and paymentg date
+                        # Assume Normal Monthly payment
                         user.last_payment = status['CallbackMetadata']['Item'][2]['Value']
 
                     # add user to chama database table
@@ -337,6 +357,10 @@ class PaymentCallBackHandler(MethodView):
 
                             context.session.execute(cstatement)
                             context.session.commit()
+        else:
+            return {
+                'error': payload['ResultDesc']
+            }
 
 
 @users_router.route('/distribute/funds/chama/', methods=['POST'])

@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_smorest import Api
-from MpesaRest import Mpesa
+# from MpesaRest import Mpesa
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
 from sqlalchemy.orm import sessionmaker
@@ -11,17 +11,17 @@ api = Api()
 
 admin = Admin(name="ChamaYettu", template_mode='bootstrap3')
 
-mpesa = Mpesa(
-    consumer_key= os.environ.get('CONSUMER_KEY'),
-    consumer_secret=os.environ.get('CONSUMER_SECRET'),
-    business_code=os.environ.get('BUSINESS_CODE'),
-    passcode= os.environ.get('PASSCODE'),
-    call_back=os.environ.get('CALL_BACK_URL'),
-    environment="os.environ.get('MPESA_ENVIRONMENT')",
-    phone_number=os.environ.get('CUSTOMER_PHONE'),
-    BusinessShortCode=os.environ.get('SHORT_CODE'),
-    Accountreference=os.environ.get('MYCOMPANY')
-)
+# mpesa = Mpesa(
+#     consumer_key= os.environ.get('CONSUMER_KEY'),
+#     consumer_secret=os.environ.get('CONSUMER_SECRET'),
+#     business_code=os.environ.get('BUSINESS_CODE'),
+#     passcode= os.environ.get('PASSCODE'),
+#     call_back=os.environ.get('CALL_BACK_URL'),
+#     environment="os.environ.get('MPESA_ENVIRONMENT')",
+#     phone_number=os.environ.get('CUSTOMER_PHONE'),
+#     BusinessShortCode=os.environ.get('SHORT_CODE'),
+#     Accountreference=os.environ.get('MYCOMPANY')
+# )
 
 def create_app(config_class='config.Config') -> Flask:
 	app = Flask(__name__)
